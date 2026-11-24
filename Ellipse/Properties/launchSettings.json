@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Ellipse (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Ellipse (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

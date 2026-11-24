@@ -1,0 +1,265 @@
+<Window
+    x:Class="Ellipse.EllipseConstructor.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
+    xmlns:models="using:Ellipse.EllipseConstructor.Models"
+    Title="Побудова еліпсів">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Top CommandBar -->
+        <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="Transparent">
+            <AppBarButton Icon="Page" Label="Новий проєкт" Command="{x:Bind ViewModel.NewProjectCommand}" />
+            <AppBarButton Icon="Delete" Label="Очистити" Command="{x:Bind ViewModel.ClearAllCommand}" />
+            <AppBarButton Icon="Save" Label="Експорт зображення" Click="ExportPng_Click" />
+            <AppBarSeparator />
+            <AppBarToggleButton Label="Сітка" IsChecked="{x:Bind ViewModel.ShowGrid, Mode=TwoWay}">
+                <AppBarToggleButton.Icon>
+                    <FontIcon Glyph="&#xF0E2;" />
+                </AppBarToggleButton.Icon>
+            </AppBarToggleButton>
+            <AppBarToggleButton Icon="Target" Label="Допоміжні елементи" IsChecked="{x:Bind ViewModel.ShowHelpers, Mode=TwoWay}" />
+            <AppBarButton Icon="Zoom" Label="Масштаб 100%" Click="ResetZoom_Click" />
+            <AppBarSeparator />
+            <AppBarButton Label="Тема" Click="ToggleTheme_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE793;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+        </CommandBar>
+
+        <!-- Main Workspace & Right Inspector -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="360" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Center Interactive 2D Canvas -->
+            <Border Grid.Column="0"
+                    Margin="12,0,6,12"
+                    CornerRadius="8"
+                    BorderThickness="1"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}">
+                <canvas:CanvasControl
+                    x:Name="MainCanvas"
+                    Draw="MainCanvas_Draw"
+                    PointerPressed="MainCanvas_PointerPressed"
+                    PointerMoved="MainCanvas_PointerMoved"
+                    PointerReleased="MainCanvas_PointerReleased"
+                    PointerWheelChanged="MainCanvas_PointerWheelChanged" />
+            </Border>
+
+            <!-- Right Inspector Panel -->
+            <ScrollViewer Grid.Column="1" Margin="6,0,12,12" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="10">
+
+                    <!-- Mode Selection -->
+                    <ComboBox Header="Режим побудови"
+                              HorizontalAlignment="Stretch"
+                              SelectedIndex="{x:Bind ModeComboIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="За центром і півосями" />
+                        <ComboBoxItem Content="За фокусами" />
+                        <ComboBoxItem Content="Інтерактивна побудова" />
+                    </ComboBox>
+
+                    <!-- Validation InfoBar -->
+                    <InfoBar IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                             Severity="Error"
+                             Title="Помилка введення"
+                             Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" />
+
+                    <!-- 1. Construction Parameters -->
+                    <Expander Header="Параметри побудови" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                        <StackPanel Spacing="10">
+
+                            <!-- By Center Mode -->
+                            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.IsByCenterMode, Mode=OneWay}">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <NumberBox Grid.Column="0" Header="Центр X₀" SpinButtonPlacementMode="Compact" SmallChange="0.5"
+                                               IsEnabled="{x:Bind ViewModel.HasSelectedEllipse, Mode=OneWay}"
+                                               Value="{x:Bind ViewModel.SelectedEllipse.CenterX, Mode=TwoWay}" />
+                                    <NumberBox Grid.Column="1" Header="Центр Y₀" SpinButtonPlacementMode="Compact" SmallChange="0.5"
+                                               IsEnabled="{x:Bind ViewModel.HasSelectedEllipse, Mode=OneWay}"
+                                               Value="{x:Bind ViewModel.SelectedEllipse.CenterY, Mode=TwoWay}" />
+                                </Grid>
+
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <NumberBox Grid.Column="0" Header="Піввісь a" Minimum="0.1" SpinButtonPlacementMode="Compact" SmallChange="0.5"
+                                               IsEnabled="{x:Bind ViewModel.HasSelectedEllipse, Mode=OneWay}"
+                                               Value="{x:Bind ViewModel.SelectedEllipse.SemiAxisA, Mode=TwoWay}" />
+                                    <NumberBox Grid.Column="1" Header="Піввісь b" Minimum="0.1" SpinButtonPlacementMode="Compact" SmallChange="0.5"
+                                               IsEnabled="{x:Bind ViewModel.HasSelectedEllipse, Mode=OneWay}"
+                                               Value="{x:Bind ViewModel.SelectedEllipse.SemiAxisB, Mode=TwoWay}" />
+                                </Grid>
+
+                                <Slider Header="Кут повороту α (°)" Minimum="-180" Maximum="180" StepFrequency="1"
+                                        IsEnabled="{x:Bind ViewModel.HasSelectedEllipse, Mode=OneWay}"
+                                        Value="{x:Bind ViewModel.SelectedEllipse.RotationAngle, Mode=TwoWay}" />
+                            </StackPanel>
+
+                            <!-- By Foci Mode -->
+                            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.IsByFociMode, Mode=OneWay}">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <NumberBox Grid.Column="0" Header="Фокус F₁ (X)" Value="{x:Bind ViewModel.Focus1X, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />
+                                    <NumberBox Grid.Column="1" Header="Фокус F₁ (Y)" Value="{x:Bind ViewModel.Focus1Y, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />
+                                </Grid>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <NumberBox Grid.Column="0" Header="Фокус F₂ (X)" Value="{x:Bind ViewModel.Focus2X, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />
+                                    <NumberBox Grid.Column="1" Header="Фокус F₂ (Y)" Value="{x:Bind ViewModel.Focus2Y, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />
+                                </Grid>
+                                <NumberBox Header="Велика вісь (2a)" Minimum="0.2" Value="{x:Bind ViewModel.FociMajorAxis2A, Mode=TwoWay}" SpinButtonPlacementMode="Compact" />
+                                <Button Content="Побудувати за фокусами" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch"
+                                        Command="{x:Bind ViewModel.BuildFromFociCommand}" />
+                            </StackPanel>
+
+                            <!-- Interactive Mode Hint -->
+                            <TextBlock Text="Затисніть ліву кнопку миші на координатній площині та потягніть, щоб інтерактивно побудувати новий еліпс."
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Visibility="{x:Bind ViewModel.IsInteractiveMode, Mode=OneWay}" />
+                        </StackPanel>
+                    </Expander>
+
+                    <!-- 2. Ellipses List -->
+                    <Expander Header="Список еліпсів" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="Додати" HorizontalAlignment="Stretch" Command="{x:Bind ViewModel.AddDefaultEllipseCommand}" />
+                                <Button Grid.Column="1" Content="Видалити" HorizontalAlignment="Stretch" Command="{x:Bind ViewModel.DeleteSelectedEllipseCommand}"
+                                        IsEnabled="{x:Bind ViewModel.HasSelectedEllipse, Mode=OneWay}" />
+                            </Grid>
+
+                            <ListView ItemsSource="{x:Bind ViewModel.Ellipses}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedEllipse, Mode=TwoWay}"
+                                      MaxHeight="150">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:EllipseModel">
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox Grid.Column="0" MinWidth="0" IsChecked="{x:Bind IsVisible, Mode=TwoWay}" Click="VisibilityCheck_Click" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Expander>
+
+                    <!-- 3. Styling -->
+                    <Expander Header="Стиль"
+          HorizontalAlignment="Stretch"
+          HorizontalContentAlignment="Stretch"
+          IsEnabled="{x:Bind ViewModel.HasSelectedEllipse, Mode=OneWay}">
+                        <StackPanel Spacing="10">
+                            <Slider Header="Товщина контуру" Minimum="1" Maximum="10" StepFrequency="0.5"
+                Value="{x:Bind ViewModel.SelectedEllipse.StrokeThickness, Mode=TwoWay}" />
+                            <Slider Header="Прозорість заливки" Minimum="0" Maximum="1" StepFrequency="0.05"
+                Value="{x:Bind ViewModel.SelectedEllipse.FillOpacity, Mode=TwoWay}" />
+                            <TextBlock Text="Колір контуру та заливки" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <ColorPicker Color="{x:Bind ViewModel.SelectedEllipse.StrokeColor, Mode=TwoWay}"
+                     ColorChanged="StrokeColorPicker_ColorChanged"
+                     ColorSpectrumShape="Ring"
+                     IsColorSliderVisible="True"
+                     IsColorChannelTextInputVisible="False"
+                     IsHexInputVisible="True"
+                     IsAlphaEnabled="False" />
+                        </StackPanel>
+                    </Expander>
+
+                    <!-- 4. Calculated Properties -->
+                    <Expander Header="Властивості" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                        <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.HasSelectedEllipse, Mode=OneWay}">
+                            <TextBlock Text="Канонічне рівняння:" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12" />
+                            <TextBlock Text="{x:Bind ViewModel.SelectedEllipse.CanonicalEquation, Mode=OneWay}" TextWrapping="Wrap" FontWeight="SemiBold" />
+
+                            <Grid ColumnSpacing="8" RowSpacing="4" Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Площа (S):" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind FormatDouble(ViewModel.SelectedEllipse.Area), Mode=OneWay}" FontWeight="SemiBold" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Периметр (P):" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind FormatDouble(ViewModel.SelectedEllipse.Perimeter), Mode=OneWay}" FontWeight="SemiBold" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Ексцентриситет (e):" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind FormatDouble(ViewModel.SelectedEllipse.Eccentricity), Mode=OneWay}" FontWeight="SemiBold" />
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Фокусна відстань (c):" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{x:Bind FormatDouble(ViewModel.SelectedEllipse.FocalDistance), Mode=OneWay}" FontWeight="SemiBold" />
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Фокуси:" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <StackPanel Grid.Row="4" Grid.Column="1" HorizontalAlignment="Right">
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedEllipse.Focus1Text, Mode=OneWay}" FontSize="12" />
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedEllipse.Focus2Text, Mode=OneWay}" FontSize="12" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Bottom Status Bar -->
+        <Border Grid.Row="2"
+                Padding="16,6"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{x:Bind ViewModel.CursorCoordsText, Mode=OneWay}" FontFamily="Consolas" FontSize="12" Margin="0,0,20,0" />
+                <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.ActiveToolHint, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12" />
+                <TextBlock Grid.Column="2" Text="{x:Bind ViewModel.ZoomPercentText, Mode=OneWay}" FontFamily="Consolas" FontSize="12" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
